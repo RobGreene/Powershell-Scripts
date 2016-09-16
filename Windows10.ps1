@@ -45,6 +45,10 @@ If (!(Test-Path "HKCU:\Software\Microsoft\Personalization\Settings")) {
     New-Item -Path "HKCU:\Software\Microsoft\Personalization\Settings" -Force | Out-Null
 }
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Personalization\Settings" -Name "AcceptedPrivacyPolicy" -Type DWord -Value 0
+If (!(Test-Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search')){
+    New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows' -Name 'Windows Search' 
+}   
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'AllowCortana' -PropertyType DWORD -Value '0' | Out-Null
 If (!(Test-Path "HKCU:\Software\Microsoft\InputPersonalization")) {
     New-Item -Path "HKCU:\Software\Microsoft\InputPersonalization" -Force | Out-Null
 }
@@ -199,6 +203,11 @@ Remove-Item -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\MyCo
  
 # Uninstall default Microsoft applications
 Write-Host "Uninstalling default Microsoft applications..."
+$Apps = Get-AppxProvisionedPackage -Online
+ForEach ($App in $Apps)
+{
+    Remove-AppxProvisionedPackage -Online -PackageName $App.PackageName | Out-Null
+}
 Get-AppxPackage "Microsoft.3DBuilder" | Remove-AppxPackage
 Get-AppxPackage "Microsoft.BingFinance" | Remove-AppxPackage
 Get-AppxPackage "Microsoft.BingNews" | Remove-AppxPackage
@@ -227,7 +236,10 @@ Get-AppxPackage "Microsoft.Messaging" | Remove-AppxPackage
 Get-AppxPackage "Microsoft.CommsPhone" | Remove-AppxPackage
 Get-AppxPackage "9E2F88E3.Twitter" | Remove-AppxPackage
 Get-AppxPackage "king.com.CandyCrushSodaSaga" | Remove-AppxPackage
- 
+Get-AppxPackage "Microsoft.WindowsStore" | Remove-AppxPackage
+Get-AppxPackage "Microsft.WindowsFeedback" | Remove-AppxPackage
+Get-AppxPackage "Microsoft.ContactSupport" | Remove-AppxPackage
+
 # Set Photo Viewer as default for bmp, gif, jpg and png
 Write-Host "Setting Photo Viewer as default for bmp, gif, jpg, png and tif..."
 If (!(Test-Path "HKCR:")) {
