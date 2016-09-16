@@ -1,3 +1,16 @@
+# Windows 10 Customization Script
+# Date: 9-16-2016
+# Author: Rob Greene
+# Version: 1.2
+
+# This script needs to be ran in Administrative Powershell for it to make the appropriate changes/removals
+# Due to the new windows 10 anniversy update, Cortana can not be disabled with the below registry edits unless this is ran on a home PC
+# Pro/Enterprise versions will need to disable Cortana via Group Policy on the Local Machine 
+
+#UPDATE 1.2: 
+# Added for-each loop to kill appxprovisionedpackages -online + some missed packages
+# Added secondary registry key for Kill Cortana for home users. 
+
 # Ask for elevated permissions if required
 If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
     Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
