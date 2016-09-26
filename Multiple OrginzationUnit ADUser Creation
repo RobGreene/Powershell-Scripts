@@ -1,0 +1,27 @@
+import-module activedirectory
+#STATIC VARIABLES
+$Users = Import-CSV -Delimiter ";" -Path C:\NewUsers.csv
+
+
+ForEach($User in $Users) {
+    if ($User.Department -eq "DEPARTMENT"){
+        $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        else {"No OU for Department Listed, Add Manually"}
+    $GivenName = $User.FirstName
+    $Initials = $User.Initials
+    $Surname = $User.LastName
+    $SAM = if ($User.Department -eq "DEPARTMENT"){
+        ($GivenName.substring(0,1) + $Initials + $Surname.substring(0,1))}
+        Else
+        {
+            ($GivenName.substring(0,1) + $User.LastName)}
+    $DisplayName = $GivenName + " " + $Surname
+    New-ADUser -Name $DisplayName -SamAccountName $SAM -UserPrincipalName $SAM -DisplayName $DisplayName -GivenName $GivenName -Initials $Initials -Surname $Surname -Department $User.Department -AccountPassword (Read-Host -AsSecureString "Changeme!") -Path $OU
+    }
+    
