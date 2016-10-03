@@ -1,0 +1,45 @@
+#Author: Rob Greene
+#Revision: 1.2
+
+
+#Change Log
+#Added Mailbox Creation + DNS root for User Principal Name.
+#User Accounts are disabled by defaut. Can be enabled by default by making adjustments to the password section. 
+
+#SESSION VARIABLES
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://exchange DNS name/PowerShell/ -Authentication Kerberos
+import-pssession $session
+import-module activedirectory
+
+#STATIC VARIABLES
+$Users = Import-CSV -Delimiter ";" -Path C:\NewUsers.csv
+$DNS = (Get-ADDomain).DNSRoot
+
+ForEach($User in $Users) {
+    if ($User.Department -eq "DEPARTMENT"){
+        $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        ElseIf ($User.Department -eq "DEPARTMENT"){
+            $OU = "ENTER OU"}
+        else {"Default OU"}
+    $GivenName = $User.FirstName
+    $Initials = $User.Initials
+    $Surname = $User.LastName
+   $SAM = if ($User.Department -eq "ACS"){
+        ($GivenName.substring(0,1) + $Initials + $Surname.substring(0,1))}
+        Else
+            ($GivenName.substring(0,1) + $User.LastName)}
+    $UPN = ($SAM + "@" + $DNS)
+    $DisplayName = $GivenName + " " + $Surname
+    New-ADUser -Name $DisplayName -SamAccountName $SAM -UserPrincipalName $UPN -DisplayName $DisplayName -GivenName $GivenName -Initials $Initials -Surname $Surname -Department $User.Department -StreetAdress "address" -City "city" -State "state" -PostalCode "zip" -Country "United States" -AccountPassword (Read-Host -AsSecureString "Changeme!") -Path $OU
+    Enable-Mailbox -Identity $UPN -Alias $SAM -Database 'DATABASE' -ActiveSyncMailboxPolicy 'Active Sync Policy'
+}
+
+#Adding Mailbox permissions for calendar 
+$mb = Get-Mailbox | Where-Object {$_.WhenCreated –ge ((Get-Date).Adddays(-1))} 
+$mb | Foreach-Object {Add-MailboxFolderPermission $_”:\Calendar” -User calaccess -AccessRights editor}
+$mb | Foreach-Object {Add-MailboxFolderPermission $_”:\Calendar” -User "all coworkers" -AccessRights reviewer}
+    
