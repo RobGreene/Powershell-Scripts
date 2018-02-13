@@ -1,0 +1,160 @@
+# To execute from within NSClient++
+#
+#[NRPE Handlers]
+#check_mailbox_health=cmd /c echo C:\Scripts\Nagios\MailboxHealth.ps1 | PowerShell.exe -Command -
+#
+# On the check_nrpe command include the -t 20, since it takes some time to load
+# the Exchange cmdlet's.
+#
+# -A : Check all databases
+# -X : Exclude the database's names (list of name must by separeted by a comma)
+# -I : Exclude the database that contains some keywords (list of keywords must by separated by a comma)
+#
+function Help
+{
+       write-host "This script check the MailBox Health of Exchange 2010"
+       write-host ""
+       write-host "Options:"
+       write-host "-A (The default)"
+       write-host "    Check all Exchange Databases"
+       write-host "-X"
+       write-host "    Ignore the Exchange Databases indicated in arguments (list separeted by a comma)"
+       write-host "-I"
+       write-host "    Keyword expression to ignore the Exchange Databases"
+       exit
+}
+function validateChecking
+{
+       [string]$DataBaseName = $DataBase.Name ;
+       if ($ExcludedDatabases.length -gt 0){
+               ForEach ($Exclude in $ExcludedDatabases)
+               {
+                       if ($DataBaseName.CompareTo($Exclude) -eq 0)
+                       {
+                               return $FALSE
+                       }
+               }
+       }
+       if ($ExcludedKeywordsDatabases.length -gt 0){
+               ForEach ($KeywordExclude in $ExcludedKeywordsDatabases)
+               {
+                       if ($DataBaseName.Contains($KeywordExclude))
+                       {
+                               return $FALSE
+                       }
+               }
+       }
+       return $TRUE
+}
+
+function checkDatabases
+{
+       Add-PSSnapin Microsoft.Exchange.Management.PowerShell.E2010
+
+       $NagiosStatus = "0"
+       $NagiosDescription = ""
+
+       ForEach ($DataBase in Get-MailboxDatabase) {
+               if (validateChecking)
+               {
+               ForEach ($Status in Get-MailboxDatabaseCopyStatus -Identity $DataBase.Name) {
+                       switch ($Status.Status) {
+                               "Failed" {
+                                       $NagiosStatus = "2"
+                                       if ($NagiosDescription -ne "") {
+                                               $NagiosDescription = $NagiosDescription + ", "
+                                       }
+                                       $NagiosDescription = $NagiosDescription + $Status.Name + " is " + $Status.Status
+                               }
+
+                               "Dismounted" {
+                                       $NagiosStatus = "2"
+                                       if ($NagiosDescription -ne "") {
+                                               $NagiosDescription = $NagiosDescription + ", "
+                                       }
+                                       $NagiosDescription = $NagiosDescription + $Status.Name + " is " + $Status.Status
+                               }
+
+                               "Resynchronizing" {
+                                       if ($NagiosStatus -ne "2") {
+                                               $NagiosStatus = "1"
+                                       }
+                                       if ($NagiosDescription -ne "") {
+                                               $NagiosDescription = $NagiosDescription + ", "
+                                       }
+                                       $NagiosDescription = $NagiosDescription + $Status.Name + " is " + $Status.Status
+                               }
+
+                               "Suspended" {
+                                       if ($NagiosStatus -ne "2") {
+                                               $NagiosStatus = "1"
+                                       }
+                                       if ($NagiosDescription -ne "") {
+                                               $NagiosDescription = $NagiosDescription + ", "
+                                       }
+                                       $NagiosDescription = $NagiosDescription + $Status.Name + " is " + $Status.Status
+                               }
+
+                               "Mounting" {
+                                       if ($NagiosStatus -ne "2") {
+                                               $NagiosStatus = "1"
+                                       }
+                                       if ($NagiosDescription -ne "") {
+                                               $NagiosDescription = $NagiosDescription + ", "
+                                       }
+                                       $NagiosDescription = $NagiosDescription + $Status.Name + " is " + $Status.Status
+                               }
+
+                               "Healthy" {}
+                               "Mounted" {}
+                       }
+               }
+               }
+       }
+       # Output, what level should we tell our caller?
+       if ($NagiosStatus -eq "2") {
+               Write-Host "CRITICAL: " $NagiosDescription
+       } elseif ($NagiosStatus -eq "1") {
+               Write-Host "WARNING: " $NagiosDescription
+       } else {
+               Write-Host "OK: All Mailbox Databases are mounted and healthy."
+       }
+
+       exit $NagiosStatus
+}
+
+$ArgCount = 0
+if ($args.length -gt 0){
+       While ($ArgCount -lt $args.length){
+               switch ($args[$ArgCount]){
+                       "-A"{
+                               $AllDatabases = "AllDatabases"
+                               $ArgCount = ($ArgCount + 1)
+                       }
+
+                       "-X"{
+                               $ExcludedDatabases = $args[($ArgCount+1)]
+                               $ArgCount = ($ArgCount + 2)
+                       }
+
+                       "-I"{
+                               $ExcludedKeywordsDatabases = $args[($ArgCount+1)]
+                               $ArgCount = ($ArgCount + 2)
+                       }
+
+                       "-h"{
+                                       Help
+                       }
+
+                       default{
+                               write-host "Invalid command."
+                               write-host "$args"
+                               Help
+                       }
+               }
+       }
+}
+else {
+       $AllDatabases = "AllDatabases"
+}
+checkDatabases
