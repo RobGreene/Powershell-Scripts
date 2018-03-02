@@ -1,0 +1,31 @@
+#Script that leverages the .NET framework to send an email message out via O365 for a server reboot. 
+
+#the generic email relay to send out through office 365. 
+$smtpServer = "smtp.office365.com"
+
+#hostname of the server
+$hostname = hostname
+
+#date and time server came back online
+$time = Get-Date
+
+#port needed for secure transfer to smtp server
+$port = "587"
+
+#domain admin username and password to login into office 365
+$smtpUser = "admin useraccount"
+$smtpPass = "password"
+
+#Builds the message using the system .net framework, send-mail does not work in V4 powershell. Credentials are using domain admin credientals
+$message = New-Object System.Net.Mail.MailMessage
+$message.From = "address you want it from (must be a real mailbox)"
+$message.To.Add( "mailbox you want it to be sent to" )
+$message.Subject = "$hostname - Server Reboot"
+$message.IsBodyHtml = $true
+$message.Body = "Production server $hostname has restarted at $time"
+
+#.net framework to build email object and send out through office 365 port 587
+$Client = New-Object System.Net.Mail.SmtpClient( $smtpServer , $port )
+$Client.EnableSsl = $true
+$Client.Credentials = New-Object System.Net.NetworkCredential( $smtpUser , $smtpPass );
+$Client.Send( $message )
