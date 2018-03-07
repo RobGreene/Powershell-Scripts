@@ -1,0 +1,1 @@
+Get-ADUser -Filter 'enabled -eq $True' -properties memberof | Where-Object {!($_.memberof -like "*permanent*")} | select Name,userprincipalname |
