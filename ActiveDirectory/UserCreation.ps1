@@ -22,7 +22,7 @@ Change Log:
 The information parses easier and is quicker then the original script. 
 
 2.1 
-- Added excel function to allow HR to fill out required Excel Document and then pull in info. Tad easier then CSV file (website linked: https://podlisk.wordpress.com/2011/11/20/import-excel-spreadsheet-into-powershell/)
+- Added excel function to allow HR to fill out required Excel Document and then pull in info. Tad easier then CSV file 
 
 #>
 
